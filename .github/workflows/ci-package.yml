@@ -16,4 +16,4 @@ jobs:
   package:
     uses: ./.github/workflows/build-npdrm-package.yml
     with:
-      package_name: PCSX3-ReARMed-\${{ github.sha }}
+      package_name: PCSX3-ReARMed-${{ github.sha }}
