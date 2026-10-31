@@ -42,7 +42,7 @@ jobs:
         id: ps3dev-cache
         uses: actions/cache@v4
         with:
-          path: \${{ runner.temp }}/ps3dev
+          path: ${{ runner.temp }}/ps3dev
           key: ps3dev-nightly-2026-10-12-linux-X64
 
       - name: Install pinned PS3DEV toolchain
@@ -100,11 +100,11 @@ jobs:
         run: |
           set -euo pipefail
           app_id="PCSX3REA1"
-          content_id="UP0001-\${app_id}_00-0000000000000001"
+          content_id="UP0001-${app_id}_00-0000000000000001"
 
           grep -Fq -- "CID=$content_id" ps3-port/build_app.sh
           grep -Fq -- "--appid $app_id" ps3-port/build_app.sh
-          grep -Fq -- "#define BASE \\"/dev_hdd0/game/$app_id/USRDIR\\"" ps3-port/wsapp/main.c
+          grep -Fq -- '#define BASE "/dev_hdd0/game/PCSX3REA1/USRDIR"' ps3-port/wsapp/main.c
 
           # The former ID was WSTN00001. Reject a stale install path or package ID.
           if grep -R -n -F --exclude='*.pkg' -- 'WSTN00001' \
@@ -117,7 +117,7 @@ jobs:
       - name: Build CFW package and finalize GNPDRM copy
         shell: bash
         env:
-          PACKAGE_NAME: \${{ inputs.package_name }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
           set -euo pipefail
           if [[ -z "$PACKAGE_NAME" || "$PACKAGE_NAME" == *"/"* || "$PACKAGE_NAME" == *".."* ]]; then
@@ -145,7 +145,7 @@ jobs:
       - name: Verify both package variants and package-only output
         shell: bash
         env:
-          PACKAGE_NAME: \${{ inputs.package_name }}
+          PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
           set -euo pipefail
           out="$GITHUB_WORKSPACE/artifacts"
@@ -157,8 +157,8 @@ jobs:
 
           shopt -s nullglob
           packages=( "$out"/*.pkg )
-          if (( \${#packages[@]} != 2 )); then
-            echo "::error::Expected exactly two package files; found \${#packages[@]}"
+          if (( ${#packages[@]} != 2 )); then
+            echo "::error::Expected exactly two package files; found ${#packages[@]}"
             find "$out" -maxdepth 1 -type f -printf '%f\n' || true
             exit 1
           fi
