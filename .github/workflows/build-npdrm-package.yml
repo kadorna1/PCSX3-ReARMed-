@@ -14,7 +14,7 @@ permissions:
 jobs:
   build:
     name: Build PS3 NPDRM PKG
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
       - name: Checkout PCSX3-ReARMed

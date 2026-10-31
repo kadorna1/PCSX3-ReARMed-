@@ -24,8 +24,9 @@ and creates a GitHub Release containing only the generated `.pkg` asset. If that
 tag's release already exists, the workflow replaces the package and removes any
 non-PKG assets.
 
-The CI build uses the PS3DEV `nightly-2026-10-12` Linux X64 toolchain bundle and a
-pinned RetroArch checkout for the `libretro-common` headers. The build scripts
+The CI build uses the PS3DEV `nightly-2026-10-12` Linux X64 toolchain bundle on
+Ubuntu 24.04 (the bundle requires glibc 2.38) and a pinned RetroArch checkout for
+the `libretro-common` headers. The build scripts
 retain their existing local defaults, while allowing CI to override `PS3DEV`,
 `PSL1GHT`, and `PORTLIBS`.
 
