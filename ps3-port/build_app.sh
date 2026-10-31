@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # usage: build_app.sh <pkgname>
 set -e
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 . /home/claude/w/wsps3/FLAGS.sh
 cd /home/claude/w/wsps3
 CF2="$CF -fno-strict-aliasing -ffunction-sections -fdata-sections -O2"
@@ -15,7 +16,7 @@ sprxlinker build/ws_stripped.elf
 CID=UP0001-WSTN00001_00-0000000000000001
 make_self_npdrm build/ws_stripped.elf build/pkg/USRDIR/EBOOT.BIN $CID
 sfo --title "WiiStation PS3" --appid WSTN00001 -f $PS3DEV/bin/sfo.xml build/pkg/PARAM.SFO
-cp $PS3DEV/bin/ICON0.PNG build/pkg/ICON0.PNG
+cp "$SCRIPT_DIR/ICON0.PNG" build/pkg/ICON0.PNG
 pkg --contentid $CID build/pkg/ build/$1.pkg
 cp build/$1.pkg ${OUT:-/tmp}/$1.pkg
 ls -la build/$1.pkg
