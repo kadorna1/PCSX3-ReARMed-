@@ -95,6 +95,25 @@ jobs:
           test -d /home/claude/w/wsapp
           test -d /home/claude/w/RetroArch/libretro-common/include
 
+      - name: Verify application ID consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_id="PCSX3REA1"
+          content_id="UP0001-\${app_id}_00-0000000000000001"
+
+          grep -Fq -- "CID=$content_id" ps3-port/build_app.sh
+          grep -Fq -- "--appid $app_id" ps3-port/build_app.sh
+          grep -Fq -- "#define BASE \\"/dev_hdd0/game/$app_id/USRDIR\\"" ps3-port/wsapp/main.c
+
+          # The former ID was WSTN00001. Reject a stale install path or package ID.
+          if grep -R -n -F --exclude='*.pkg' -- 'WSTN00001' \
+            ps3-port/build_app.sh ps3-port/wsapp ps3-port/wsps3; then
+            echo "::error::Found a stale WSTN00001 app-ID reference"
+            exit 1
+          fi
+          echo "Application ID is consistent: $app_id ($content_id)"
+
       - name: Build CFW package and finalize GNPDRM copy
         shell: bash
         env:
