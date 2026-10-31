@@ -12,6 +12,23 @@ Standalone PlayStation 3 homebrew build (PSL1GHT, ppu-gcc 7.2.0), based on the P
 - `releases/` packages: v98 (FXAA default), v104 (SPU polygon renderer, FXAA 2x-16x, Turbo CD; tested good on hardware)
 - `host_test/` x86 test rig; `test_spu.c` checks the SPU polygon renderer against SoftGPU pixel for pixel
 
+## Automated NPDRM packages
+
+GitHub Actions builds the NPDRM PKG on pushes to `ps3-port`, pull requests targeting
+that branch, and manual dispatch. The Actions artifact named
+`pcsx3rearmed-npdrm` contains only the generated `.pkg` file; compiler outputs,
+logs, EBOOT.BIN, PARAM.SFO, and the package staging directory are never uploaded.
+
+Pushing a version tag matching `v*` (for example, `v1.0.0`) runs the same builder
+and creates a GitHub Release containing only the generated `.pkg` asset. If that
+tag's release already exists, the workflow replaces the package and removes any
+non-PKG assets.
+
+The CI build uses the PS3DEV `nightly-2026-10-12` Linux X64 toolchain bundle and a
+pinned RetroArch checkout for the `libretro-common` headers. The build scripts
+retain their existing local defaults, while allowing CI to override `PS3DEV`,
+`PSL1GHT`, and `PORTLIBS`.
+
 The SPU polygon renderer (`wsps3/spu/`) is on by default (Start toggles it); fights run at full speed.
 
 ## Lightrec CPU option (source only, not yet tested on hardware)
