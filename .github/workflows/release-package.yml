@@ -12,7 +12,7 @@ jobs:
   build:
     uses: ./.github/workflows/build-npdrm-package.yml
     with:
-      package_name: PCSX3-ReARMed-\${{ github.ref_name }}
+      package_name: PCSX3-ReARMed-${{ github.ref_name }}
 
   publish:
     name: Publish CFW + GNPDRM PKGs only
@@ -30,7 +30,7 @@ jobs:
       - name: Verify package-only release contents
         shell: bash
         env:
-          PACKAGE_NAME: PCSX3-ReARMed-\${{ github.ref_name }}
+          PACKAGE_NAME: PCSX3-ReARMed-${{ github.ref_name }}
         run: |
           set -euo pipefail
           cfw_pkg="dist/$PACKAGE_NAME.pkg"
@@ -40,8 +40,8 @@ jobs:
 
           shopt -s nullglob
           packages=( dist/*.pkg )
-          if (( \${#packages[@]} != 2 )); then
-            echo "::error::Expected exactly two .pkg files; found \${#packages[@]}"
+          if (( ${#packages[@]} != 2 )); then
+            echo "::error::Expected exactly two .pkg files; found ${#packages[@]}"
             find dist -maxdepth 1 -type f -printf '%f\n' || true
             exit 1
           fi
@@ -59,8 +59,8 @@ jobs:
 
       - name: Create or refresh GitHub Release with both packages
         env:
-          GH_TOKEN: \${{ github.token }}
-          PACKAGE_NAME: PCSX3-ReARMed-\${{ github.ref_name }}
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE_NAME: PCSX3-ReARMed-${{ github.ref_name }}
         shell: bash
         run: |
           set -euo pipefail
@@ -80,10 +80,10 @@ jobs:
                 --jq '.[].id'
             )
 
-            gh release upload "$tag" "\${packages[@]}" \
+            gh release upload "$tag" "${packages[@]}" \
               --repo "$GITHUB_REPOSITORY" --clobber
           else
-            gh release create "$tag" "\${packages[@]}" \
+            gh release create "$tag" "${packages[@]}" \
               --repo "$GITHUB_REPOSITORY" \
               --verify-tag \
               --title "PCSX3-ReARMed $tag" \
