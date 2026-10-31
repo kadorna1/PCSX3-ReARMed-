@@ -1,10 +1,10 @@
-name: Build PCSX3-ReARMed NPDRM package
+name: Build PCSX3-ReARMed CFW + GNPDRM packages
 
 on:
   workflow_call:
     inputs:
       package_name:
-        description: "Basename for the generated .pkg file (without extension)"
+        description: "Basename for generated package files (without extension)"
         required: true
         type: string
 
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   build:
-    name: Build PS3 NPDRM PKG
+    name: Build PS3 CFW + GNPDRM PKGs
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -74,7 +74,7 @@ jobs:
           echo "$PS3DEV/bin" >> "$GITHUB_PATH"
           echo "$PS3DEV/ppu/bin" >> "$GITHUB_PATH"
           echo "$PS3DEV/spu/bin" >> "$GITHUB_PATH"
-          for tool in ppu-gcc ppu-ar ppu-strip sprxlinker make_self_npdrm sfo pkg; do
+          for tool in ppu-gcc ppu-ar ppu-strip sprxlinker make_self_npdrm sfo pkg package_finalize; do
             command -v "$tool" >/dev/null || {
               echo "::error::Required PS3 tool not found on PATH: $tool"
               exit 1
@@ -95,7 +95,26 @@ jobs:
           test -d /home/claude/w/wsapp
           test -d /home/claude/w/RetroArch/libretro-common/include
 
-      - name: Build emulator core and NPDRM package
+      - name: Verify application ID consistency
+        shell: bash
+        run: |
+          set -euo pipefail
+          app_id="PCSX3REA1"
+          content_id="UP0001-${app_id}_00-0000000000000001"
+
+          grep -Fq -- "CID=$content_id" ps3-port/build_app.sh
+          grep -Fq -- "--appid $app_id" ps3-port/build_app.sh
+          grep -Fq -- '#define BASE "/dev_hdd0/game/PCSX3REA1/USRDIR"' ps3-port/wsapp/main.c
+
+          # The former ID was WSTN00001. Reject a stale install path or package ID.
+          if grep -R -n -F --exclude='*.pkg' -- 'WSTN00001' \
+            ps3-port/build_app.sh ps3-port/wsapp ps3-port/wsps3; then
+            echo "::error::Found a stale WSTN00001 app-ID reference"
+            exit 1
+          fi
+          echo "Application ID is consistent: $app_id ($content_id)"
+
+      - name: Build CFW package and finalize GNPDRM copy
         shell: bash
         env:
           PACKAGE_NAME: ${{ inputs.package_name }}
@@ -105,40 +124,62 @@ jobs:
             echo "::error::Invalid package basename: $PACKAGE_NAME"
             exit 1
           fi
+
           out="$GITHUB_WORKSPACE/artifacts"
           rm -rf "$out"
           mkdir -p "$out"
 
+          # The ordinary PSL1GHT PKG is the CFW/debug-installable variant.
           bash /home/claude/w/build_ws.sh
           OUT="$out" bash /home/claude/w/build_app.sh "$PACKAGE_NAME"
 
-      - name: Verify package-only output
+          cfw_pkg="$out/$PACKAGE_NAME.pkg"
+          gnpdrm_pkg="$out/$PACKAGE_NAME.gnpdrm.pkg"
+          test -s "$cfw_pkg"
+
+          # PSL1GHT's standard flow finalizes a copy, preserving the CFW PKG.
+          cp "$cfw_pkg" "$gnpdrm_pkg"
+          package_finalize "$gnpdrm_pkg"
+          test -s "$gnpdrm_pkg"
+
+      - name: Verify both package variants and package-only output
         shell: bash
+        env:
+          PACKAGE_NAME: ${{ inputs.package_name }}
         run: |
           set -euo pipefail
+          out="$GITHUB_WORKSPACE/artifacts"
+          cfw_pkg="$out/$PACKAGE_NAME.pkg"
+          gnpdrm_pkg="$out/$PACKAGE_NAME.gnpdrm.pkg"
+
+          test -s "$cfw_pkg"
+          test -s "$gnpdrm_pkg"
+
           shopt -s nullglob
-          packages=( "$GITHUB_WORKSPACE"/artifacts/*.pkg )
-          if (( ${#packages[@]} != 1 )); then
-            echo "::error::Expected exactly one .pkg file; found ${#packages[@]}"
-            find "$GITHUB_WORKSPACE/artifacts" -maxdepth 1 -type f -printf '%f\n' || true
+          packages=( "$out"/*.pkg )
+          if (( ${#packages[@]} != 2 )); then
+            echo "::error::Expected exactly two package files; found ${#packages[@]}"
+            find "$out" -maxdepth 1 -type f -printf '%f\n' || true
             exit 1
           fi
-          if find "$GITHUB_WORKSPACE/artifacts" -mindepth 1 -maxdepth 1 -type f ! -name '*.pkg' -print -quit | grep -q .; then
+          if find "$out" -mindepth 1 -maxdepth 1 -type f ! -name '*.pkg' -print -quit | grep -q .; then
             echo "::error::The release output directory contains non-PKG files"
             exit 1
           fi
-          test -s "${packages[0]}"
-          magic="$(od -An -N4 -tx1 "${packages[0]}" | tr -d ' \n')"
-          if [[ "$magic" != "7f504b47" ]]; then
-            echo "::error::Output does not have a PS3 PKG header: $magic"
-            exit 1
-          fi
-          echo "Validated package: $(basename "${packages[0]}") ($(stat -c%s "${packages[0]}") bytes)"
 
-      - name: Upload package artifact (PKG files only)
+          for package in "$cfw_pkg" "$gnpdrm_pkg"; do
+            magic="$(od -An -N4 -tx1 "$package" | tr -d ' \n')"
+            if [[ "$magic" != "7f504b47" ]]; then
+              echo "::error::Output does not have a PS3 PKG header: $(basename "$package") ($magic)"
+              exit 1
+            fi
+            echo "Validated $(basename "$package") ($(stat -c%s "$package") bytes)"
+          done
+
+      - name: Upload both package artifacts (PKG files only)
         uses: actions/upload-artifact@v7
         with:
-          name: pcsx3rearmed-npdrm
+          name: pcsx3rearmed-cfw-gnpdrm
           path: artifacts/*.pkg
           if-no-files-found: error
           retention-days: 30

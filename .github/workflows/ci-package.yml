@@ -1,12 +1,13 @@
-name: Build PS3 NPDRM package
+name: Build PS3 CFW + GNPDRM packages
 
 on:
   push:
     branches:
+      - main
       - ps3-port
-      - ci/npdrm-package-workflows
   pull_request:
     branches:
+      - main
       - ps3-port
   workflow_dispatch:
 
