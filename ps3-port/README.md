@@ -1,6 +1,10 @@
-# WiiStation PS3 port (PCSX-ReARMed lineage)
+# PCSX3-ReARMed PS3 port
 
-Standalone PS3 homebrew build (PSL1GHT, ppu-gcc 7.2.0).
+Standalone PlayStation 3 homebrew build (PSL1GHT, ppu-gcc 7.2.0), based on the PCSX-ReARMed lineage.
+
+- XMB title: `PCSX3-ReARMed`
+- PS3 TITLE_ID / PARAM.SFO app ID: `PCSX3REA1`
+- Package content ID: `UP0001-PCSX3REA1_00-0000000000000001`.
 
 - `wsps3/`  emulator core: PPC dynarec, SoftGPU, CHD (libchdr), SPU-assisted pieces
 - `wsapp/`  PS3 front-end (`main.c`: menu, RSX scaler, FXAA pass in `fx/`)
